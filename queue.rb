@@ -1,19 +1,15 @@
 class Queue
-  attr_accessor :members, :server
+  attr_accessor :members, :servers
 
-  def initialize()
+  def initialize
     @members = []
-    # @server = server
+    @servers = []
   end
 
   # insert a member
   # checks if server is available
-  def insert(simulator, member)
-    if @server.isBusy?
-      @members << member
-    else
-      @server.schedule(simulator, member)
-    end
+  def insert(member)
+    @members << member
   end
 
   def next
@@ -25,7 +21,11 @@ class Queue
     @members.size
   end
 
-  def isEmpty?
+  def is_empty?
     @members.empty?
+  end
+
+  def lazy_server
+    @servers.select {|x| !x.busy? }.first
   end
 end
