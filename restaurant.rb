@@ -14,7 +14,7 @@ class RestaurantSimulation < Simulation
   attr_accessor :check_in_queue, :weight_queue, :payment_queue,
                 :customers, :stats, :payment_servers, :weight_servers, :check_in_servers
 
-  def initialize(start_time, end_time, payment_servers, weight_servers, check_in_servers)
+  def initialize(start_time, end_time, check_in_servers = 1, weight_servers = 1, payment_servers = 1)
     super(start_time, end_time)
     @customers = []
     @stats = {
@@ -24,9 +24,9 @@ class RestaurantSimulation < Simulation
         payment_queue: {}
       },
       servers: {
-        check_in_server: {},
-        weight_server: {},
-        payment_server: {}
+        check_in_servers: {},
+        weight_servers: {},
+        payment_servers: {}
       }
     }
 
@@ -40,23 +40,19 @@ class RestaurantSimulation < Simulation
 
   def start
     @check_in_queue = Queue.new
-
     @check_in_servers.times do |time|
-
+      @check_in_queue.servers << CheckInServer.new
     end
 
-    @check_in_server = CheckInServer.new
-
-    @check_in_queue.server = check_in_server
-
-    weight_server = WeightServer.new
     @weight_queue = Queue.new
-    @weight_queue.server = weight_server
+    @weight_servers.times do |time|
+      @weight_queue.servers << WeightServer.new
+    end
 
-    payment_server = PaymentServer.new
     @payment_queue = Queue.new
-    @payment_queue.server = payment_server
-
+    @payment_servers.times do |time|
+      @payment_queue.servers << PaymentServer.new
+    end
 
     generator = Generator.new
     # generator.simulation = self
@@ -71,8 +67,13 @@ class RestaurantSimulation < Simulation
 
     run_events
 
-    puts stats
+
+    # puts stats
+    puts "CHECK IN QUEUE: #{check_in_queue.size}"
+
+    puts "SERVERS SIZE"
+    puts "CHECK IN #{@check_in_servers} : #{@check_in_queue.servers.collect {|x| x.id }.inspect}"
+    puts "WEIGHT #{@weight_servers} : #{@weight_queue.servers.collect {|x| x.id }.inspect}"
+    puts "PAYMENT #{@payment_servers} : #{@payment_queue.servers.collect {|x| x.id }.inspect}"
   end
 end
-
-RestaurantSimulation.new(Time.now, Time.now + 2.minutes)

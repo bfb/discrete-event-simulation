@@ -1,13 +1,17 @@
-require 'secure_random'
+require 'securerandom'
 
 class Server
   attr_accessor :current, :id
 
   def initialize
-    self.id = SecureRandom.uuid
+    @id = SecureRandom.uuid
   end
 
   def busy?
-    !current.nil?
+    !@current.nil?
+  end
+
+  def iddle!
+    @current = nil
   end
 end

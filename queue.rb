@@ -7,14 +7,17 @@ class Queue
   end
 
   # insert a member
-  # checks if server is available
   def insert(member)
     @members << member
   end
 
   def next
     # removes the first member
-    @members.shift
+    puts "REMOVE ELEMENT! #{@members.first}"
+    puts "SIZE: #{members.size}"
+    m = @members.shift
+    puts "SIZE: #{members.size}"
+    m
   end
 
   def size
@@ -26,6 +29,8 @@ class Queue
   end
 
   def lazy_server
-    @servers.select {|x| !x.busy? }.first
+    s=@servers.select {|x| !x.busy? }.sample
+    puts "\n\nLAZY SERVER: #{s}\n\n"
+    s
   end
 end

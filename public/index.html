@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>Simulator</title>
+
+    <!-- Bootstrap -->
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
+
+    <style>
+      #content {
+        width: 900px;
+        padding: 40px;
+        margin: 20px auto;
+        border: 1px solid #CCC;
+        border-radius: 10px;
+        background: #F5F5F5;
+        box-shadow: 1px 1px 1px #DDD;
+      }
+
+      h1 {
+        padding: 10px;
+        margin: 10px;
+        font-size: 26px;
+        font-weight: normal;
+      }
+
+      h2 {
+        font-size: 20px;
+      }
+
+      h3 {
+        font-size: 16px;
+      }
+
+      #results, .chart {
+        width: 100%;
+        height: 400px;
+      }
+
+      .server-chart {
+        width: 100%;
+        height: 140px;
+      }
+
+
+    </style>
+
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+      <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+          <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
+
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
+    <script src="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.js">
+    <script src="http://www.flotcharts.org/flot/jquery.flot.js"></script>
+
+    <script type="text/javascript">
+
+      String.prototype.capitalize = function(){
+          return this.toLowerCase().replace( /\b\w/g, function (m) {
+              return m.toUpperCase();
+          });
+      };
+
+      $(function(){
+        $('#results').hide();
+        $('#run-button').on('click', function(e){
+          console.log("SUBMIT")
+
+          e.preventDefault();
+          $.ajax({
+            type: "POST",
+            url: '/run',
+            data: $('#run-form').serialize(),
+            dataType: 'json'
+          }).done(function(data) {
+            $('#results').show();
+            // $.plot("#results", [{
+            //   data: data,
+            //   lines: { show: true, steps: true, fill: true }
+            // }]);
+            for(var i in data['queues']) {
+              new Chartist.Line('#results_' + i, {
+                labels: data['queues'][i]['x'],
+                // Naming the series with the series object array notation
+                series: [{
+                  name: 'series-1',
+                  data: data['queues'][i]['y']
+                }]
+              }, {
+                fullWidth: true,
+                // Within the series options you can use the series names
+                // to specify configuration that will only be used for the
+                // specific series.
+                series: {
+                  'series-1': {
+                    lineSmooth: Chartist.Interpolation.step()
+                  }
+                }
+              });
+            }
+
+            for(var j in data.servers) {
+              var div = document.createElement('div');
+              div.id = j;
+              document.getElementById('content').appendChild(div);
+              console.log($('#' + j));
+              $('#' + j).prepend('<h2>' + j.capitalize() + '</h2>');
+
+              for(var k in data.servers[j]) {
+                var div = document.createElement('div');
+                div.id = "c_" + k;
+                div.className = "server-chart";
+
+                console.log("PARENT " + document.getElementById(j));
+                document.getElementById(j).appendChild(div);
+
+                $('#c_' + k).prepend('<h3>' + k + '</h3>');
+
+                new Chartist.Line('#c_' + k, {
+                  labels: data.servers[j][k]['x'],
+                  // Naming the series with the series object array notation
+                  series: [{
+                    name: 'series-1',
+                    data: data.servers[j][k]['y']
+                  }]
+                }, {
+                  fullWidth: true,
+                  // Within the series options you can use the series names
+                  // to specify configuration that will only be used for the
+                  // specific series.
+                  series: {
+                    'series-1': {
+                      lineSmooth: Chartist.Interpolation.step()
+                    }
+                  }
+                });
+
+                var $chart = $('#c_' + k);
+                console.log("$chart");
+                console.log($('#c_' + k).html());
+
+                var $toolTip = $chart
+                  .append('<div class="tooltip"></div>')
+                  .find('.tooltip')
+                  .hide();
+
+                $chart.on('mouseenter', '.ct-point', function() {
+                  var $point = $(this),
+                    value = $point.attr('ct:value'),
+                    seriesName = $point.parent().attr('ct:series-name');
+                  $toolTip.html(seriesName + '<br>' + value).show();
+                });
+
+                $chart.on('mouseleave', '.ct-point', function() {
+                  $toolTip.hide();
+                });
+
+                $chart.on('mousemove', function(event) {
+                  $toolTip.css({
+                    left: (event.offsetX || event.originalEvent.layerX) - $toolTip.width() / 2 - 10,
+                    top: (event.offsetY || event.originalEvent.layerY) - $toolTip.height() - 40
+                  });
+                });
+
+              }
+
+            }
+
+
+            // var chart = new Chartist.Line('#results', {
+            //   labels: data['x'],
+            //   // Naming the series with the series object array notation
+            //   series: [{
+            //     name: 'series-1',
+            //     data: data['y']
+            //   }]
+            // }, {
+            //   fullWidth: true,
+            //   // Within the series options you can use the series names
+            //   // to specify configuration that will only be used for the
+            //   // specific series.
+            //   series: {
+            //     'series-1': {
+            //       lineSmooth: Chartist.Interpolation.step()
+            //     }
+            //   }
+            // });
+
+
+          });
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <div id="content">
+      <h1>Restaurant Simulator</h1>
+
+      <form id="run-form" class="form-horizontal">
+        <div class="form-group">
+          <label for="simulation_start_time" class="col-sm-2 control-label">Start time</label>
+          <div class="col-sm-10">
+            <input type="time" class="form-control" name="simulation[start_time]" id="simulation_start_time" value="17:30:00">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="simulation_end_time" class="col-sm-2 control-label">End time</label>
+          <div class="col-sm-10">
+            <input type="time" class="form-control" name="simulation[end_time]" id="simulation_end_time" value="20:30:00">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="simulation_check_in_servers" class="col-sm-2 control-label">Check in servers</label>
+          <div class="col-sm-10">
+            <input type="number" class="form-control" name="simulation[check_in_servers]" id="simulation_check_in_servers" value="1">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="simulation_weight_servers" class="col-sm-2 control-label">Weight servers</label>
+          <div class="col-sm-10">
+            <input type="number" class="form-control" name="simulation[weight_servers]" id="simulation_weight_servers" value="1">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="simulation_payment_servers" class="col-sm-2 control-label">Payment servers</label>
+          <div class="col-sm-10">
+            <input type="number" class="form-control" name="simulation[payment_servers]" id="simulation_payment_servers" value="1">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="col-sm-offset-2 col-sm-10">
+            <button type="submit" class="btn btn-primary" id="run-button">Run</button>
+          </div>
+        </div>
+      </form>
+
+      <h2>Check in queue</h2>
+      <div id="results_check_in_queue" class="chart">
+      </div>
+
+      <h2>Weight queue</h2>
+      <div id="results_weight_queue" class="chart">
+      </div>
+
+      <h2>Payment queue</h2>
+      <div id="results_payment_queue" class="chart">
+      </div>
+
+
+      <div id="results3">
+
+      </div>
+
+      <div id="results4">
+      </div>
+
+    </div>
+  </body>
+
+
+</html>

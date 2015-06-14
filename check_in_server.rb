@@ -21,6 +21,8 @@ class CheckInServer < Server
     # self.time = simulation.time + service_time
 
     done = CheckInDone.new(simulation.time + service_time, customer)
+    done.server = self
+
     simulation.schedule(done)
     # @current = nil
   end

@@ -12,6 +12,8 @@ class PaymentServer < Server
     # self.time = simulation.time + service_time
 
     done = PaymentDone.new(simulation.time + service_time, customer)
+    done.server = self
+
     simulation.schedule(done)
     # @current = nil
   end
