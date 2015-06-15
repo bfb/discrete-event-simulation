@@ -1,6 +1,5 @@
 class WeightServer < Server
   def execute(simulation, customer)
-    puts "Pesando #{customer.name}"
     if busy?
       puts "Error: server is busy!!!!!!"
       return
@@ -8,7 +7,8 @@ class WeightServer < Server
 
     @current = customer
     # generate a random service time
-    service_time = 20.seconds
+    # service_time = 12.seconds
+    service_time = Croupier::Distributions::Normal.new(mean: 9.37, std: 1.44).generate_number.seconds
     # self.time = simulation.time + service_time
 
     done = WeightDone.new(simulation.time + service_time, customer)

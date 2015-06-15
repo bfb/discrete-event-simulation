@@ -9,7 +9,6 @@ class CheckInServer < Server
   # end
 
   def execute(simulation, customer)
-    puts "Atendendo #{customer.name}"
     if busy?
       puts "Error: server is busy!!!!!!"
       return
@@ -17,7 +16,10 @@ class CheckInServer < Server
 
     @current = customer
     # generate a random service time
-    service_time = 10.seconds
+    gen = Croupier::Distributions::Normal.new(mean: 1.0, std: 0.3).generate_number
+    # service_time = 1.seconds
+    service_time = gen.seconds
+
     # self.time = simulation.time + service_time
 
     done = CheckInDone.new(simulation.time + service_time, customer)

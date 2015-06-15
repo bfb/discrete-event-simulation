@@ -37,6 +37,10 @@
         font-size: 16px;
       }
 
+      ul {
+        font-size: 16px;
+      }
+
       #results, .chart {
         width: 100%;
         height: 400px;
@@ -44,7 +48,7 @@
 
       .server-chart {
         width: 100%;
-        height: 140px;
+        height: 400px;
       }
 
 
@@ -65,143 +69,136 @@
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/js/bootstrap.min.js"></script>
 
     <link rel="stylesheet" href="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
-    <script src="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.js">
+    <script src="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
     <script src="http://www.flotcharts.org/flot/jquery.flot.js"></script>
+
+    <script src="/js/jquery.canvasjs.min.js"></script>
 
     <script type="text/javascript">
 
       String.prototype.capitalize = function(){
-          return this.toLowerCase().replace( /\b\w/g, function (m) {
+
+          return this.replace(/_/g, ' ').toLowerCase().replace( /\b\w/g, function (m) {
               return m.toUpperCase();
           });
       };
 
       $(function(){
+        function formatDatePoints(data) {
+          var formattedData = [];
+
+          for(var i in data) {
+            formattedData.push({ x: new Date(data[i].x), y: data[i].y });
+          };
+          console.log(formattedData);
+          return formattedData;
+        };
+
         $('#results').hide();
+
         $('#run-button').on('click', function(e){
-          console.log("SUBMIT")
+          $('.chart, #total_customers').html('');
+          $('.server-chart').remove();
 
           e.preventDefault();
           $.ajax({
             type: "POST",
             url: '/run',
             data: $('#run-form').serialize(),
-            dataType: 'json'
+            dataType: 'json',
+            async: true
           }).done(function(data) {
             $('#results').show();
-            // $.plot("#results", [{
-            //   data: data,
-            //   lines: { show: true, steps: true, fill: true }
-            // }]);
+
+
+            var stats = '<ul> <li>Total customers: ' + data.customers  +' </li> <li>Mean delay: </li> <ul> <li>Check in: ' + data.queue_delay.check_in_queue + 's</li> <li>Weight: ' + data.queue_delay.weight_queue + 's</li> <li>Payment: ' + data.queue_delay.payment_queue + 's</li> </ul> </ul>';
+
+            $('#total_customers').html(stats);
+
             for(var i in data['queues']) {
-              new Chartist.Line('#results_' + i, {
-                labels: data['queues'][i]['x'],
-                // Naming the series with the series object array notation
-                series: [{
-                  name: 'series-1',
-                  data: data['queues'][i]['y']
-                }]
-              }, {
-                fullWidth: true,
-                // Within the series options you can use the series names
-                // to specify configuration that will only be used for the
-                // specific series.
-                series: {
-                  'series-1': {
-                    lineSmooth: Chartist.Interpolation.step()
+
+              var chart = new CanvasJS.Chart('results_' + i, {
+                title: {
+                  text: i.capitalize(),
+                  fontSize: 16,
+                  fontFamily: "helvetica",
+                },
+                zoomEnabled:true,
+                backgroundColor: '#F5F5F5',
+                data: [
+                  {
+                    type: "stepArea",
+                    dataPoints: formatDatePoints(data['queues'][i])
                   }
-                }
+                ]
               });
+              chart.render();
+
             }
 
             for(var j in data.servers) {
               var div = document.createElement('div');
               div.id = j;
               document.getElementById('content').appendChild(div);
-              console.log($('#' + j));
-              $('#' + j).prepend('<h2>' + j.capitalize() + '</h2>');
+              // $('#' + j).prepend('<h2>' + j.capitalize() + '</h2>');
 
               for(var k in data.servers[j]) {
                 var div = document.createElement('div');
-                div.id = "c_" + k;
+                div.id = "l_" + j + k;
                 div.className = "server-chart";
-
-                console.log("PARENT " + document.getElementById(j));
                 document.getElementById(j).appendChild(div);
+                // $('#c_' + j + k).prepend('<h3>' + k + '</h3>');
+                // $('#' + j).prepend('<h3>' + k + '</h3>');
 
-                $('#c_' + k).prepend('<h3>' + k + '</h3>');
-
-                new Chartist.Line('#c_' + k, {
-                  labels: data.servers[j][k]['x'],
-                  // Naming the series with the series object array notation
-                  series: [{
-                    name: 'series-1',
-                    data: data.servers[j][k]['y']
-                  }]
-                }, {
-                  fullWidth: true,
-                  // Within the series options you can use the series names
-                  // to specify configuration that will only be used for the
-                  // specific series.
-                  series: {
-                    'series-1': {
-                      lineSmooth: Chartist.Interpolation.step()
+                var chart = new CanvasJS.Chart('l_' + j + k, {
+                  title: {
+                    text: (j + ': ' + k).capitalize(),
+                    fontSize: 16,
+                    fontFamily: "helvetica",
+                  },
+                  zoomEnabled:true,
+                  backgroundColor: '#F5F5F5',
+                  data: [
+                    {
+                      type: "stepArea",
+                      dataPoints: formatDatePoints(data.servers[j][k].line)
                     }
-                  }
+                  ]
                 });
+                chart.render();
 
-                var $chart = $('#c_' + k);
-                console.log("$chart");
-                console.log($('#c_' + k).html());
+                var div = document.createElement('div');
+                div.id = "p_" + j + k;
+                div.className = "server-chart";
+                document.getElementById(j).appendChild(div);
+                // $('#c_' + j + k).prepend('<h3>' + k + '</h3>');
+                // $('#' + j).prepend('<h3>' + k + '</h3>');
 
-                var $toolTip = $chart
-                  .append('<div class="tooltip"></div>')
-                  .find('.tooltip')
-                  .hide();
-
-                $chart.on('mouseenter', '.ct-point', function() {
-                  var $point = $(this),
-                    value = $point.attr('ct:value'),
-                    seriesName = $point.parent().attr('ct:series-name');
-                  $toolTip.html(seriesName + '<br>' + value).show();
+                var chart = new CanvasJS.Chart('p_' + j + k, {
+                  title: {
+                    text: (j + ' activity time: ' + k).capitalize(),
+                    fontSize: 16,
+                    fontFamily: "helvetica",
+                  },
+                  legend: {
+                    maxWidth: 350,
+                    itemWidth: 120,
+                    indexLabelFontFamily: 'helvetica'
+                  },
+                  zoomEnabled:true,
+                  backgroundColor: '#F5F5F5',
+                  data: [
+                    {
+                      type: "pie",
+                      // showInLegend: true,
+                      legendText: "{indexLabel}",
+                      dataPoints: data.servers[j][k].pie
+                    }
+                  ]
                 });
-
-                $chart.on('mouseleave', '.ct-point', function() {
-                  $toolTip.hide();
-                });
-
-                $chart.on('mousemove', function(event) {
-                  $toolTip.css({
-                    left: (event.offsetX || event.originalEvent.layerX) - $toolTip.width() / 2 - 10,
-                    top: (event.offsetY || event.originalEvent.layerY) - $toolTip.height() - 40
-                  });
-                });
-
+                chart.render();
               }
-
             }
-
-
-            // var chart = new Chartist.Line('#results', {
-            //   labels: data['x'],
-            //   // Naming the series with the series object array notation
-            //   series: [{
-            //     name: 'series-1',
-            //     data: data['y']
-            //   }]
-            // }, {
-            //   fullWidth: true,
-            //   // Within the series options you can use the series names
-            //   // to specify configuration that will only be used for the
-            //   // specific series.
-            //   series: {
-            //     'series-1': {
-            //       lineSmooth: Chartist.Interpolation.step()
-            //     }
-            //   }
-            // });
-
-
           });
         });
       });
@@ -213,65 +210,69 @@
 
       <form id="run-form" class="form-horizontal">
         <div class="form-group">
-          <label for="simulation_start_time" class="col-sm-2 control-label">Start time</label>
-          <div class="col-sm-10">
+          <label for="simulation_lambda" class="col-sm-3 control-label">Lambda rate per 10 seconds</label>
+          <div class="col-sm-9">
+            <input type="input" class="form-control" name="simulation[lambda]" id="simulation_lambda" value="0.87">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="simulation_start_time" class="col-sm-3 control-label">Start time</label>
+          <div class="col-sm-9">
             <input type="time" class="form-control" name="simulation[start_time]" id="simulation_start_time" value="17:30:00">
           </div>
         </div>
         <div class="form-group">
-          <label for="simulation_end_time" class="col-sm-2 control-label">End time</label>
-          <div class="col-sm-10">
+          <label for="simulation_end_time" class="col-sm-3 control-label">End time</label>
+          <div class="col-sm-9">
             <input type="time" class="form-control" name="simulation[end_time]" id="simulation_end_time" value="20:30:00">
           </div>
         </div>
 
         <div class="form-group">
-          <label for="simulation_check_in_servers" class="col-sm-2 control-label">Check in servers</label>
-          <div class="col-sm-10">
+          <label for="simulation_check_in_servers" class="col-sm-3 control-label">Check in servers</label>
+          <div class="col-sm-9">
             <input type="number" class="form-control" name="simulation[check_in_servers]" id="simulation_check_in_servers" value="1">
           </div>
         </div>
 
         <div class="form-group">
-          <label for="simulation_weight_servers" class="col-sm-2 control-label">Weight servers</label>
-          <div class="col-sm-10">
+          <label for="simulation_weight_servers" class="col-sm-3 control-label">Weight servers</label>
+          <div class="col-sm-9">
             <input type="number" class="form-control" name="simulation[weight_servers]" id="simulation_weight_servers" value="1">
           </div>
         </div>
 
         <div class="form-group">
-          <label for="simulation_payment_servers" class="col-sm-2 control-label">Payment servers</label>
-          <div class="col-sm-10">
+          <label for="simulation_payment_servers" class="col-sm-3 control-label">Payment servers</label>
+          <div class="col-sm-9">
             <input type="number" class="form-control" name="simulation[payment_servers]" id="simulation_payment_servers" value="1">
           </div>
         </div>
 
         <div class="form-group">
-          <div class="col-sm-offset-2 col-sm-10">
+          <div class="col-sm-offset-3 col-sm-9">
             <button type="submit" class="btn btn-primary" id="run-button">Run</button>
           </div>
         </div>
       </form>
 
-      <h2>Check in queue</h2>
-      <div id="results_check_in_queue" class="chart">
-      </div>
+        <div id="total_customers">
 
-      <h2>Weight queue</h2>
-      <div id="results_weight_queue" class="chart">
-      </div>
+        </div>
 
-      <h2>Payment queue</h2>
-      <div id="results_payment_queue" class="chart">
-      </div>
+        <!-- <h2>Check in queue</h2> -->
+        <div id="results_check_in_queue" class="chart">
+        </div>
 
+        <!-- <h2>Weight queue</h2> -->
+        <div id="results_weight_queue" class="chart">
+        </div>
 
-      <div id="results3">
+        <!-- <h2>Payment queue</h2> -->
+        <div id="results_payment_queue" class="chart">
+        </div>
 
-      </div>
-
-      <div id="results4">
-      </div>
 
     </div>
   </body>

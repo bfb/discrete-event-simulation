@@ -1,10 +1,9 @@
-require 'securerandom'
-
 class Server
-  attr_accessor :current, :id
+  attr_accessor :current, :id, :stats
 
-  def initialize
-    @id = SecureRandom.uuid
+  def initialize(id)
+    @id = id
+    @stats = {}
   end
 
   def busy?
@@ -13,5 +12,9 @@ class Server
 
   def iddle!
     @current = nil
+  end
+
+  def collect(event_time, status)
+    @stats[event_time] = status
   end
 end
