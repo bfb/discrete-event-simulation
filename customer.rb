@@ -11,18 +11,4 @@ class Customer
   def collect(queue, action, event_time)
     @stats[queue][action] = event_time
   end
-
-  # the customer arrived the ticket server
-  # schedule to enter into buffet
-  def arrived
-  end
-
-  # the customer picked his food
-  def picked_food
-  end
-
-  # the customer paid and exit
-  def paid
-  end
-
 end

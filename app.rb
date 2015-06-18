@@ -44,13 +44,8 @@ post '/run' do
   @simulation.stats[:servers].each do |key, servers|
     response[:servers][key] = {}
     servers.each do |id, values|
-      # response[:servers][key][id] = { x: values.keys, y: values.values }
-
-
-      # response[:servers][key][id] = []
       response[:servers][key][id] = { pie: [], line: [] }
 
-      # !!!!!!!!!!!!!!previous time for iddle and busy separately!!!!!!!!!!!!
       previous = values.keys.first
 
       busy = 0
@@ -101,8 +96,8 @@ post '/run' do
         payment_queue: (queue_delay[:payment_queue]/total_customers).round(2)
       }
 
-      puts "TOTAL: #{total_time}"
-      puts "#{busy} : #{(busy*100.0)/total_time} / 100%"
+      # puts "TOTAL: #{total_time}"
+      # puts "#{busy} : #{(busy*100.0)/total_time} / 100%"
     end
   end
 

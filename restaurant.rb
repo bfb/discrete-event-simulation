@@ -43,17 +43,12 @@ class RestaurantSimulation < Simulation
     end
 
     generator = Generator.new
-    # generator.simulation = self
-
-    # generator.queue = queue
-    # queue.server = server
-    # server.queue = queue
-
-    # schedule generator
     generator.time = @time + 30.seconds
     schedule(generator)
 
     run_events
+
+    puts "ALL EVENTS HAS DONE"
 
     build_stats
 
