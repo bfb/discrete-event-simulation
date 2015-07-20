@@ -1,4 +1,4 @@
-require './restaurant.rb'
+require './initializer.rb'
 require 'sinatra'
 
 class Time
@@ -8,11 +8,6 @@ class Time
 end
 
 post '/run' do
-  puts "PARAMS => #{params.inspect}"
-
-  # start_time = Time.now
-  # end_time = Time.now + 5.minutes
-  # end_time = start_time + 1.hour
   start_time = params[:simulation][:start_time].to_time
   end_time = params[:simulation][:end_time].to_time
   check_in_servers = params[:simulation][:check_in_servers].to_i
@@ -25,12 +20,13 @@ post '/run' do
 
   response = { customers: @simulation.stats[:customers], queues: {}, servers: {} }
 
+  # compute all stats
+
   @simulation.stats[:queues].each do |key, queue|
     response[:queues][key] = []
     queue.each do |x, y|
       response[:queues][key] << { x: x, y: y }
     end
-    # response[:queues][key] = { x: queue.keys, y: queue.values }
   end
 
 
@@ -41,6 +37,8 @@ post '/run' do
 
   total_time = all.flatten.sort {|x,y| x <=> y }.last - start_time
 
+
+  # calculate busy time for each server
   @simulation.stats[:servers].each do |key, servers|
     response[:servers][key] = {}
     servers.each do |id, values|
@@ -62,7 +60,6 @@ post '/run' do
         end
 
         if y != previous && y == 0
-          # puts "#{x} - #{start_interval} = #{x - start_interval}"
           interval = x - start_interval
           busy += interval
           previous = 0
@@ -96,8 +93,6 @@ post '/run' do
         payment_queue: (queue_delay[:payment_queue]/total_customers).round(2)
       }
 
-      # puts "TOTAL: #{total_time}"
-      # puts "#{busy} : #{(busy*100.0)/total_time} / 100%"
     end
   end
 

@@ -1,16 +1,3 @@
-require 'active_support/all'
-require 'croupier'
-require './simulation.rb'
-require './server.rb'
-require './event.rb'
-require './queue.rb'
-require './events.rb'
-require './generator.rb'
-require './check_in_server.rb'
-require './weight_server.rb'
-require './payment_server.rb'
-require './customer.rb'
-
 class RestaurantSimulation < Simulation
   attr_accessor :rate, :check_in_queue, :weight_queue, :payment_queue,
                 :customers, :stats, :payment_servers, :weight_servers, :check_in_servers
@@ -47,8 +34,6 @@ class RestaurantSimulation < Simulation
     schedule(generator)
 
     run_events
-
-    puts "ALL EVENTS HAS DONE"
 
     build_stats
 
